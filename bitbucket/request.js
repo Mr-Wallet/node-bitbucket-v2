@@ -236,7 +236,7 @@ module.exports = function Request(_options) {
       if (!useXhr) {
         headers['Host'] = 'api.bitbucket.org'; // eslint-disable-line dot-notation
         headers['User-Agent'] = 'NodeJS HTTP Client';
-        headers['Content-Lengthf'] = '0';
+        headers['Content-Length'] = '0';
       }
 
       return { headers, hostname, port };
