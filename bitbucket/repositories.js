@@ -135,6 +135,39 @@ module.exports = function RepositoriesApi(api) {
     },
 
     /**
+     * Get the pull requests for a single repo, with the destination and source repos on each pull requests totally
+     * populated.
+     *
+     * @param {String} repo owner
+     * @param {String} slug (name) of the repo.
+     * @param {constants.pullRequest.states or Array thereof} The PR state. If invalid or undefined, defaults to OPEN
+     */
+    getPullRequestsWithPopulatedRepositories(username, repoSlug, state, callback) {
+      let stateArray = state;
+      if (!stateArray) {
+        stateArray = [constants.pullRequest.states.OPEN];
+      }
+      else if (!_.isArray(stateArray)) {
+        stateArray = [stateArray];
+      }
+
+      const hasInvalidState = _.find(state, (stateElement) => !_.includes(constants.pullRequest.states, stateElement));
+      if (hasInvalidState) {
+        stateArray = [constants.pullRequest.states.OPEN];
+      }
+
+      const apiParameters = {
+        state: stateArray.join(',')
+      };
+
+      api.get(
+        `repositories/${encodeURI(username)}/${encodeURI(repoSlug)}/pullrequests?fields=%2Bvalues.destination.repository.*,%2Bvalues.source.repository.*`, // eslint-disable-line max-len
+        apiParameters, null,
+        result.$createListener(callback)
+      );
+    },
+
+    /**
      * Get the repositories of a user
      *
      * @param {String}  username
