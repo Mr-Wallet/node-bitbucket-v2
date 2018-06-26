@@ -24,6 +24,10 @@ module.exports = function RepositoriesApi(api) {
         throw new Error('Repo must be initialized with a booelan privacy setting and a string name');
       }
 
+      // NOTE the below comment has been clarified by TJ Kells at bitbucket - slugification is implemented here:
+      // https://docs.djangoproject.com/en/1.11/_modules/django/utils/text/#slugify
+      // Someday the below could be updated to precisely re-implement django's slugification.
+
       // The official API error is that slugs must be alphanumeric with underscore, dot, and dash, lowercase, and
       // no whitespace. Most things convert to dashes with Atlassian's secret converter but apostophes just disappear
       // (here I've assumed quotes are the same).
