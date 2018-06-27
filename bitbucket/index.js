@@ -11,7 +11,7 @@ const User = require('./user');
  * Based on the PHP GitHub API project http://github.com/ornicar/php-github-api
  */
 
-module.exports = function Bitbucket({ proxy, useXhr }) {
+module.exports = function Bitbucket({ proxy, useXhr } = {}) {
   /**
    * Define HTTP proxy in format localhost:3128
    */
