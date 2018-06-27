@@ -144,9 +144,13 @@ module.exports = function RepositoriesApi(api) {
      *
      * @param {String} repo owner
      * @param {String} slug (name) of the repo.
-     * @param {constants.pullRequest.states or Array thereof} The PR state. If invalid or undefined, defaults to OPEN
+     * @param {Object} options The fields to populate, and optionally the PR state (defaults to OPEN)
      */
-    getPullRequestsWithPopulatedRepositories(username, repoSlug, state, callback) {
+    getPullRequestsWithFields(username, repoSlug, { state, fields } = {}, callback) {
+      if (!_.isArray(fields)) {
+        throw new Error('getPullRequestsWithFields: options argument missing or has no \'fields\' array.');
+      }
+
       let stateArray = state;
       if (!stateArray) {
         stateArray = [constants.pullRequest.states.OPEN];
@@ -164,8 +168,11 @@ module.exports = function RepositoriesApi(api) {
         state: stateArray.join(',')
       };
 
+      const fieldsWithEncodedPlus = fields.map((field) => `%2B${field}`);
+      apiParameters.fields = fieldsWithEncodedPlus.join(',');
+
       api.get(
-        `repositories/${encodeURI(username)}/${encodeURI(repoSlug)}/pullrequests?fields=%2Bvalues.destination.repository.*,%2Bvalues.source.repository.*`, // eslint-disable-line max-len
+        `repositories/${encodeURI(username)}/${encodeURI(repoSlug)}/pullrequests`, // eslint-disable-line max-len
         apiParameters, null,
         result.$createListener(callback)
       );
