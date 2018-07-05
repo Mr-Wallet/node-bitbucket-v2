@@ -147,8 +147,8 @@ module.exports = function RepositoriesApi(api) {
      * @param {Object} options The fields to populate, and optionally the PR state (defaults to OPEN)
      */
     getPullRequestsWithFields(username, repoSlug, { state, fields } = {}, callback) {
-      if (!_.isArray(fields)) {
-        throw new Error('getPullRequestsWithFields: options argument missing or has no \'fields\' array.');
+      if (!_.isArray(fields) || fields.length < 1) {
+        throw new Error('getPullRequestsWithFields: options argument missing or has missing/empty \'fields\' array.');
       }
 
       let stateArray = state;
@@ -168,7 +168,7 @@ module.exports = function RepositoriesApi(api) {
         state: stateArray.join(',')
       };
 
-      const fieldsWithEncodedPlus = fields.map((field) => `%2B${field}`);
+      const fieldsWithEncodedPlus = fields.map((field) => `+${field}`);
       apiParameters.fields = fieldsWithEncodedPlus.join(',');
 
       api.get(
