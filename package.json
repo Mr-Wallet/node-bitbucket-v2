@@ -16,7 +16,7 @@
     "node >=6.2.1"
   ],
   "dependencies": {
-    "lodash": "^4.6.1",
+    "lodash": "4.17.10",
     "oauth": "~0.9.14",
     "xhr": "^2.2.0"
   },
