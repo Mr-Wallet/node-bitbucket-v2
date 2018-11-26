@@ -93,9 +93,8 @@ module.exports = function Request(_options) {
           return;
         }
 
-        const response = options.use_xhr ? _response : result.decodeResponse(_response);
         if (callback) {
-          callback(null, response);
+          callback(null, _response);
         }
       });
     },
