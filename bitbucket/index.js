@@ -1,8 +1,8 @@
-const Constants = require('./constants');
-const Repositories = require('./repositories');
-const Request = require('./request');
-const User = require('./user');
-const Workspaces = require('./workspaces');
+const constants = require('./constants');
+const buildRepositories = require('./repositories');
+const buildRequest = require('./request');
+const buildUser = require('./user');
+const buildWorkspaces = require('./workspaces');
 
 
 /**
@@ -25,13 +25,13 @@ module.exports = function Bitbucket({ proxy, useXhr } = {}) {
   const apiModel = {
     $proxy_host,
     $proxy_port,
-    constants: Constants
+    constants
   };
 
-  apiModel.repositories = Repositories(apiModel);
-  apiModel.request = Request({ proxy_host: $proxy_host, proxy_port: $proxy_port, use_xhr: useXhr });
-  apiModel.user = User(apiModel);
-  apiModel.workspaces = Workspaces(apiModel);
+  apiModel.repositories = buildRepositories(apiModel);
+  apiModel.request = buildRequest({ proxy_host: $proxy_host, proxy_port: $proxy_port, use_xhr: useXhr });
+  apiModel.user = buildUser(apiModel);
+  apiModel.workspaces = buildWorkspaces(apiModel);
 
   /**
    * Authenticate a user for all next requests using an API token
@@ -67,8 +67,8 @@ module.exports = function Bitbucket({ proxy, useXhr } = {}) {
    * @param {Object}  parameters       GET parameters
    * @param {Object}  requestOptions   reconfigure the request
    */
-  apiModel.get = (route, parameters, requestOptions, callback) =>
-    apiModel.request.get(route, parameters || {}, requestOptions, callback);
+  apiModel.get = (route, parameters, requestOptions) =>
+    apiModel.request.get(route, parameters || {}, requestOptions);
 
   /**
    * Call any route, DELETE method
@@ -78,8 +78,8 @@ module.exports = function Bitbucket({ proxy, useXhr } = {}) {
    * @param {Object}  parameters       GET parameters
    * @param {Object}  requestOptions   reconfigure the request
    */
-  apiModel.delete = (route, parameters, requestOptions, callback) =>
-    apiModel.request.send(route, parameters, 'DELETE', requestOptions, callback);
+  apiModel.delete = (route, parameters, requestOptions) =>
+    apiModel.request.delete(route, parameters, requestOptions);
 
   /**
    * Call any route, POST method
@@ -89,57 +89,53 @@ module.exports = function Bitbucket({ proxy, useXhr } = {}) {
    * @param {Object}  parameters       POST parameters
    * @param {Object}  requestOptions   reconfigure the request
    */
-  apiModel.post = (route, parameters, requestOptions, callback) =>
-    apiModel.request.post(route, parameters || {}, requestOptions, callback);
+  apiModel.post = (route, parameters, requestOptions) =>
+    apiModel.request.post(route, parameters || {}, requestOptions);
 
   /**
    * Check for whether we can iterate to another page using this.getNextPage(response).
-   * @param {response} A response that was received from the API.
+   * @param {response} response A response that was received from the API.
    * @return {boolean} true if the response indicates more pages are available, false otherwise.
    */
   apiModel.hasNextPage = (response) => !!response.next;
 
   /**
    * Check for whether we can iterate to another page using this.getPreviousPage(response).
-   * @param {response} A response that was received from the API.
+   * @param {response} response A response that was received from the API.
    * @return {boolean} true if the response indicates a previous pages is available, false otherwise.
    */
   apiModel.hasPreviousPage = (response) => !!response.previous;
 
   /**
-   * Takes a response and a callback and makes an API request for the response's next page. When the next page
-   * comes back, the param callback is run on the next-page response.
-   * NOTE this should only be called guarded behind a check to this.hasNextPage(response) !
+   * Takes a response and makes an API request for the response's next page.
+   * NOTE this should only be called guarded behind a check to `this.hasNextPage(response)`!
    *
-   * @param {response} A response that was received from the API.
-   * @param {callback} The callback to run when the response comes back.
+   * @param {response} response A response that was received from the API.
    */
-  apiModel.getNextPage = (response, callback) => {
+  apiModel.getNextPage = (response) => {
     if (!apiModel.hasNextPage(response)) {
       throw new Error(
         'getNextPage: argument has no next page url. Call hasNextPage first to guard this method call.'
       );
     }
 
-    apiModel.request.doPrebuiltSend(response.next, callback);
+    apiModel.request.doPrebuiltSend(response.next);
   };
 
   /**
-   * Takes a response and a callback and makes an API request for the response's previous page. When the previous page
-   * comes back, the param callback is run on the previous-page response.
-   * NOTE this should only be called guarded behind a check to this.hasPreviousPage(response) !
+   * Takes a response and makes an API request for the response's previous page.
+   * NOTE this should only be called guarded behind a check to `this.hasPreviousPage(response)`!
    *
-   * @param {response} A response that was received from the API.
-   * @param {callback} The callback to run when the response comes back.
+   * @param {response} response A response that was received from the API.
    */
-  apiModel.getPreviousPage = (response, callback) => {
+  apiModel.getPreviousPage = (response) => {
     if (!apiModel.hasPreviousPage(response)) {
       throw new Error(
         'getPreviousPage: argument has no next page url. Call hasPreviousPage first to guard this method call.'
       );
     }
 
-    apiModel.request.doPrebuiltSend(response.previous, callback);
+    apiModel.request.doPrebuiltSend(response.previous);
   };
 
   return apiModel;

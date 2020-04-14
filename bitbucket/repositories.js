@@ -1,6 +1,5 @@
 const _ = require('lodash');
 
-const AbstractApi = require('./abstract_api');
 const constants = require('./constants');
 
 /**
@@ -8,9 +7,7 @@ const constants = require('./constants');
  *           https://confluence.atlassian.com/bitbucket/repository-resource-423626331.html
  */
 module.exports = function RepositoriesApi(api) {
-  const result = AbstractApi(api);
-
-  return _.assign(result, {
+  return {
     /**
      * Create a new repository
      * @param {String} workspace workspace UUID or slug
@@ -18,7 +15,7 @@ module.exports = function RepositoriesApi(api) {
      *                         NOTE Unlike the normal API, Including an explicit name property in repo is REQUIRED!!
      *                         Due to limitations in the API, the slug is derived from the repo name within this method.
      */
-    create(workspace, repo, callback) {
+    create: (workspace, repo) => {
       if (!repo || !_.isBoolean(repo.is_private) || !_.isString(repo.name)) {
         throw new Error('Repo must be initialized with a booelan privacy setting and a string name');
       }
@@ -41,10 +38,9 @@ module.exports = function RepositoriesApi(api) {
         .replace(/-$/, '')
         .toLowerCase();
 
-      api.post(
+      return api.post(
         `repositories/${encodeURI(workspace)}/${encodeURI(repoSlug)}`,
-        repo, null,
-        result.$createListener(callback)
+        repo
       );
     },
 
@@ -55,13 +51,10 @@ module.exports = function RepositoriesApi(api) {
      * @param {String} repoSlug (name) of the repo.
      * @param {Object} pullRequest The PR POST body as specified by Bitbucket's API documentation
      */
-    createPullRequest(workspace, repoSlug, pullRequest, callback) {
-      api.post(
-        `repositories/${encodeURI(workspace)}/${encodeURI(repoSlug)}/pullrequests`,
-        pullRequest, null,
-        result.$createListener(callback)
-      );
-    },
+    createPullRequest: (workspace, repoSlug, pullRequest) => api.post(
+      `repositories/${encodeURI(workspace)}/${encodeURI(repoSlug)}/pullrequests`,
+      pullRequest
+    ),
 
     /**
      * Get the info for a single repo
@@ -69,13 +62,7 @@ module.exports = function RepositoriesApi(api) {
      * @param {String} workspace workspace UUID or slug
      * @param {String} slug (name) of the repo.
      */
-    get(workspace, repoSlug, callback) {
-      api.get(
-        `repositories/${encodeURI(workspace)}/${encodeURI(repoSlug)}`,
-        null, null,
-        result.$createListener(callback)
-      );
-    },
+    get: (workspace, repoSlug) => api.get(`repositories/${encodeURI(workspace)}/${encodeURI(repoSlug)}`),
 
     /**
      * Get the branch info for a single repo
@@ -83,13 +70,8 @@ module.exports = function RepositoriesApi(api) {
      * @param {String} workspace workspace UUID or slug
      * @param {String} slug (name) of the repo.
      */
-    getBranches(workspace, repoSlug, callback) {
-      api.get(
-        `repositories/${encodeURI(workspace)}/${encodeURI(repoSlug)}/refs/branches`,
-        null, null,
-        result.$createListener(callback)
-      );
-    },
+    getBranches: (workspace, repoSlug) =>
+      api.get(`repositories/${encodeURI(workspace)}/${encodeURI(repoSlug)}/refs/branches`),
 
     /**
      * Get a single commit
@@ -97,13 +79,8 @@ module.exports = function RepositoriesApi(api) {
      * @param {String} slug (name) of the repo.
      * @param {String} the sha of the commit
      */
-    getCommit(workspace, repoSlug, sha, callback) {
-      api.get(
-        `repositories/${encodeURI(workspace)}/${encodeURI(repoSlug)}/commit/${sha}`,
-        null, null,
-        result.$createListener(callback)
-      );
-    },
+    getCommit: (workspace, repoSlug, sha) =>
+      api.get(`repositories/${encodeURI(workspace)}/${encodeURI(repoSlug)}/commit/${sha}`),
 
     /**
      * Get the pull requests for a single repo
@@ -112,7 +89,7 @@ module.exports = function RepositoriesApi(api) {
      * @param {String} slug (name) of the repo.
      * @param {constants.pullRequest.states or Array thereof} The PR state. If invalid or undefined, defaults to OPEN
      */
-    getPullRequests(workspace, repoSlug, state, callback) {
+    getPullRequests: (workspace, repoSlug, state) => {
       let stateArray = state;
       if (!stateArray) {
         stateArray = [constants.pullRequest.states.OPEN];
@@ -130,10 +107,9 @@ module.exports = function RepositoriesApi(api) {
         state: stateArray.join(',')
       };
 
-      api.get(
+      return api.get(
         `repositories/${encodeURI(workspace)}/${encodeURI(repoSlug)}/pullrequests`,
-        apiParameters, null,
-        result.$createListener(callback)
+        apiParameters
       );
     },
 
@@ -145,7 +121,7 @@ module.exports = function RepositoriesApi(api) {
      * @param {String} repoSlug (name) of the repo.
      * @param {Object} options The fields to populate, and optionally the PR state (defaults to OPEN)
      */
-    getPullRequestsWithFields(workspace, repoSlug, { state, fields } = {}, callback) {
+    getPullRequestsWithFields: (workspace, repoSlug, { state, fields } = {}) => {
       if (!_.isArray(fields) || fields.length < 1) {
         throw new Error('getPullRequestsWithFields: options argument missing or has missing/empty \'fields\' array.');
       }
@@ -170,10 +146,9 @@ module.exports = function RepositoriesApi(api) {
       const fieldsWithEncodedPlus = fields.map((field) => `+${field}`);
       apiParameters.fields = fieldsWithEncodedPlus.join(',');
 
-      api.get(
+      return api.get(
         `repositories/${encodeURI(workspace)}/${encodeURI(repoSlug)}/pullrequests`, // eslint-disable-line max-len
-        apiParameters, null,
-        result.$createListener(callback)
+        apiParameters
       );
     },
 
@@ -182,13 +157,7 @@ module.exports = function RepositoriesApi(api) {
      *
      * @param {String} workspace workspace UUID or slug
      */
-    getByWorkspace(workspace, callback) {
-      api.get(
-        `repositories/${encodeURI(workspace)}`,
-        null, null,
-        result.$createListener(callback)
-      );
-    },
+    getByWorkspace: (workspace) => api.get(`repositories/${encodeURI(workspace)}`),
 
     /**
      * Get the forks for a repo
@@ -196,30 +165,21 @@ module.exports = function RepositoriesApi(api) {
      * @param {String} workspace workspace UUID or slug
      * @param {String} repoSlug (name) of the repo.
      */
-    getForks(workspace, repoSlug, callback) {
-      api.get(
-        `repositories/${encodeURI(workspace)}/${encodeURI(repoSlug)}/forks`,
-        null, null,
-        result.$createListener(callback)
-      );
-    },
+    getForks: (workspace, repoSlug) => api.get(`repositories/${encodeURI(workspace)}/${encodeURI(repoSlug)}/forks`),
 
     /**
      * Get the forks for a repo using an API response that has repository links
      *
      * @param {Object} API response
      */
-    getForksFromResponse(response, callback) {
+    getForksFromResponse: (response) => {
       const prebuiltURL = response && response.links && response.links.forks && response.links.forks.href;
 
       if (!prebuiltURL) {
         throw new Error('getForksFromResponse: argument has no \'forks\' url.');
       }
 
-      api.request.doPrebuiltSend(
-        prebuiltURL,
-        result.$createListener(callback)
-      );
+      return api.request.doPrebuiltSend(prebuiltURL);
     },
 
     /**
@@ -228,7 +188,7 @@ module.exports = function RepositoriesApi(api) {
      *
      * @param {Object} API response
      */
-    getParentFromResponse(response, callback) {
+    getParentFromResponse: (response) => {
       const prebuiltURL = _.get(response, 'parent.links.self.href');
 
       if (!prebuiltURL) {
@@ -237,10 +197,7 @@ module.exports = function RepositoriesApi(api) {
         );
       }
 
-      api.request.doPrebuiltSend(
-        prebuiltURL,
-        result.$createListener(callback)
-      );
+      return api.request.doPrebuiltSend(prebuiltURL);
     },
 
     /**
@@ -249,8 +206,6 @@ module.exports = function RepositoriesApi(api) {
      * @param {Object} API response
      * @return {boolean} true if the argument has an associated "parent" (i.e. the response is a fork), false otherwise.
      */
-    hasParent(response) {
-      return !!response.parent;
-    }
-  });
+    hasParent: (response) => Boolean(response.parent)
+  };
 };

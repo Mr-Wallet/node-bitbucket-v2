@@ -60,63 +60,35 @@ module.exports = function Request(_options) {
 
     /**
      * Send a GET request
-     * @see send
+     * @see doSend
      */
-    get(apiPath, parameters, options, callback) {
-      return result.send(apiPath, parameters, 'GET', options, callback);
+    get(apiPath, parameters, options) {
+      return result.doSend(apiPath, parameters, 'GET', options);
     },
 
     /**
      * Send a POST request
-     * @see send
+     * @see doSend
      */
-    post(apiPath, parameters, options, callback) {
-      return result.send(apiPath, parameters, 'POST', options, callback);
+    post(apiPath, parameters, options) {
+      return result.doSend(apiPath, parameters, 'POST', options);
     },
 
     /**
-     * Send a request to the server, receive a response,
-     * decode the response and returns an associative array
-     *
-     * @param  {String}    apiPath        Request API path
-     * @param  {Object}    parameters     Parameters
-     * @param  {String}    httpMethod     HTTP method to use
-     * @param  {Object}    options        reconfigure the request for this call only
+     * Send a DELETE request
+     * @see doSend
      */
-    send(apiPath, parameters, httpMethod = 'GET', __options, callback) {
-      const options = __options || $options;
-      result.doSend(apiPath, parameters, httpMethod, options, (err, _response) => {
-        if (err) {
-          if (callback) {
-            callback(err);
-          }
-          return;
-        }
-
-        if (callback) {
-          callback(null, _response);
-        }
-      });
+    delete(apiPath, parameters, options) {
+      return result.doSend(apiPath, parameters, 'GET', options);
     },
-
 
     /**
      * Send a request to the server using a URL received from the API directly, receive a response
      *
      * @param {String}   $prebuiltURL       Request URL given by a previous API call
      */
-    doPrebuiltSend(prebuiltURL, callback) {
+    doPrebuiltSend(prebuiltURL) {
       const { headers, port } = result.prepRequest($options);
-
-      let called = false;
-      function done(err, body) {
-        if (called) {
-          return;
-        }
-
-        called = true;
-        callback(err, body);
-      }
 
       if ($options.use_xhr) {
         const xhrOptions = {
@@ -126,8 +98,7 @@ module.exports = function Request(_options) {
           url: prebuiltURL
         };
 
-        result.sendXhrRequest(xhrOptions, done);
-        return;
+        return result.sendXhrRequest(xhrOptions);
       }
 
       const { hostname, path } = url.parse(prebuiltURL);
@@ -139,17 +110,18 @@ module.exports = function Request(_options) {
         post: port
       };
 
-      result.sendHttpsRequest(httpsOptions, undefined, done);
+      return result.sendHttpsRequest(httpsOptions);
     },
 
     /**
      * Send a request to the server, receive a response
      *
-     * @param {String}   $apiPath       Request API path
-     * @param {Object}    $parameters    Parameters
-     * @param {String}   $httpMethod    HTTP method to use
+     * @param {String}   apiPath       Request API path
+     * @param {Object}    parameters    Parameters
+     * @param {String}   _httpMethod    HTTP method to use
+     * @param  {Object}    options        reconfigure the request for this call only
      */
-    doSend(apiPath, parameters, _httpMethod, options, callback) {
+    doSend(apiPath, parameters, _httpMethod = 'GET', options = $options) {
       const method = _httpMethod.toUpperCase();
       const { headers, hostname, port } = result.prepRequest(options);
 
@@ -167,16 +139,6 @@ module.exports = function Request(_options) {
         path += `?${query}`;
       }
 
-      let called = false;
-      function done(err, body) {
-        if (called) {
-          return;
-        }
-
-        called = true;
-        callback(err, body);
-      }
-
       if (options.use_xhr) {
         const xhrOptions = {
           headers,
@@ -189,8 +151,7 @@ module.exports = function Request(_options) {
           xhrOptions.json = parameters;
         }
 
-        result.sendXhrRequest(xhrOptions, done);
-        return;
+        return result.sendXhrRequest(xhrOptions);
       }
 
       const httpsOptions = {
@@ -201,7 +162,7 @@ module.exports = function Request(_options) {
         post: port
       };
 
-      result.sendHttpsRequest(httpsOptions, query, done);
+      return result.sendHttpsRequest(httpsOptions, query);
     },
 
     /**
@@ -209,6 +170,9 @@ module.exports = function Request(_options) {
      */
     decodeResponse(response) {
       if ($options.format === 'json') {
+        if (!response) {
+          return {};
+        }
         return JSON.parse(response);
       }
 
@@ -241,45 +205,48 @@ module.exports = function Request(_options) {
       return { headers, hostname, port };
     },
 
-    sendHttpsRequest(httpsOptions, query, done) {
+    sendHttpsRequest(httpsOptions, query) {
+      let resolve;
+      let reject;
+      const resultPromise = new Promise((_resolve, _reject) => {
+        resolve = _resolve;
+        reject = _reject;
+      });
+
       const request = https.request(httpsOptions, (response) => {
         response.setEncoding('utf8');
 
-        const body = [];
+        const rawBody = [];
         response.addListener('data', (chunk) => {
-          body.push(chunk);
+          rawBody.push(chunk);
         });
         response.addListener('end', () => {
-          let msg = body.join('');
+          let body = rawBody.join('');
 
-          if (response.statusCode > 204) {
+          if (response.statusCode >= 400) {
             if (response.headers['content-type'].includes('application/json')) {
-              msg = JSON.parse(msg);
+              body = JSON.parse(body);
             }
-            done({ status: response.statusCode, msg });
+            reject({ statusCode: response.statusCode, body });
             return;
           }
-          if (response.statusCode === 204) {
-            msg = {};
-          }
-          else {
-            msg = result.decodeResponse(msg);
-          }
 
-          done(null, msg);
+          body = result.decodeResponse(body);
+
+          resolve({ statusCode: response.statusCode, body });
         });
 
         response.addListener('error', (e) => {
-          done(e);
+          reject(e);
         });
 
         response.addListener('timeout', () => {
-          done(new Error('Request timed out'));
+          reject(new Error('Request timed out'));
         });
       });
 
       request.on('error', (e) => {
-        done(e);
+        reject(e);
       });
 
       if (httpsOptions.method === 'POST') {
@@ -287,26 +254,33 @@ module.exports = function Request(_options) {
       }
 
       request.end();
+
+      return resultPromise;
     },
 
-    sendXhrRequest(xhrOptions, done) {
+    sendXhrRequest(xhrOptions) {
+      let resolve;
+      let reject;
+      const resultPromise = new Promise((_resolve, _reject) => {
+        resolve = _resolve;
+        reject = _reject;
+      });
+
       xhr(xhrOptions, (error, response) => {
         if (error) {
-          done(error);
+          reject(error);
           return;
         }
-        let msg = response.body;
 
-        if (response.statusCode > 204) {
-          done({ status: response.statusCode, msg });
+        if (response.statusCode >= 400) {
+          reject(response);
           return;
         }
-        if (response.statusCode === 204) {
-          msg = {};
-        }
 
-        done(null, msg);
+        resolve(response);
       });
+
+      return resultPromise;
     }
   });
 };
