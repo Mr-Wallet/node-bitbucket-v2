@@ -1,8 +1,8 @@
 const Constants = require('./constants');
 const Repositories = require('./repositories');
 const Request = require('./request');
-const Teams = require('./teams');
 const User = require('./user');
+const Workspaces = require('./workspaces');
 
 
 /**
@@ -30,8 +30,8 @@ module.exports = function Bitbucket({ proxy, useXhr } = {}) {
 
   apiModel.repositories = Repositories(apiModel);
   apiModel.request = Request({ proxy_host: $proxy_host, proxy_port: $proxy_port, use_xhr: useXhr });
-  apiModel.teams = Teams(apiModel);
   apiModel.user = User(apiModel);
+  apiModel.workspaces = Workspaces(apiModel);
 
   /**
    * Authenticate a user for all next requests using an API token
