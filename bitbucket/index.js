@@ -119,7 +119,7 @@ module.exports = function Bitbucket({ proxy, useXhr } = {}) {
       );
     }
 
-    apiModel.request.doPrebuiltSend(response.next);
+    return apiModel.request.doPrebuiltSend(response.next);
   };
 
   /**
@@ -135,7 +135,7 @@ module.exports = function Bitbucket({ proxy, useXhr } = {}) {
       );
     }
 
-    apiModel.request.doPrebuiltSend(response.previous);
+    return apiModel.request.doPrebuiltSend(response.previous);
   };
 
   return apiModel;
