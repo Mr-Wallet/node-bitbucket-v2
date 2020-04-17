@@ -18,3 +18,4 @@ Due to the aforementioned breaking changes on Bitbucket's end, usage of previous
  - `repositories.getByUser` and `repositories.getByTeam` have been merged to `repositories.getByWorkspace`.
  - `teams.get` has been removed.
  - `workspaces.get` has been added.
+ - Fixed a bug where double JSON parsing would cause parsing to throw an error. Thanks to @mateusmcg for the fix!
