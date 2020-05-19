@@ -3,6 +3,7 @@ const buildRepositories = require('./repositories');
 const buildRequest = require('./request');
 const buildUser = require('./user');
 const buildWorkspaces = require('./workspaces');
+const { extractResponseBody } = require('./helpers');
 
 
 /**
@@ -94,23 +95,23 @@ module.exports = function Bitbucket({ proxy, useXhr } = {}) {
 
   /**
    * Check for whether we can iterate to another page using this.getNextPage(response).
-   * @param {response} response A response that was received from the API.
+   * @param {response} response A response that was received from the API, or its `body` property.
    * @return {boolean} true if the response indicates more pages are available, false otherwise.
    */
-  apiModel.hasNextPage = (response) => !!response.next;
+  apiModel.hasNextPage = (response) => Boolean(extractResponseBody(response).next);
 
   /**
    * Check for whether we can iterate to another page using this.getPreviousPage(response).
-   * @param {response} response A response that was received from the API.
+   * @param {response} response A response that was received from the API, or its `body` property.
    * @return {boolean} true if the response indicates a previous pages is available, false otherwise.
    */
-  apiModel.hasPreviousPage = (response) => !!response.previous;
+  apiModel.hasPreviousPage = (response) => Boolean(extractResponseBody(response).previous);
 
   /**
    * Takes a response and makes an API request for the response's next page.
    * NOTE this should only be called guarded behind a check to `this.hasNextPage(response)`!
    *
-   * @param {response} response A response that was received from the API.
+   * @param {response} response A response that was received from the API, or its `body` property.
    */
   apiModel.getNextPage = (response) => {
     if (!apiModel.hasNextPage(response)) {
@@ -119,14 +120,14 @@ module.exports = function Bitbucket({ proxy, useXhr } = {}) {
       );
     }
 
-    return apiModel.request.doPrebuiltSend(response.next);
+    return apiModel.request.doPrebuiltSend(extractResponseBody(response).next);
   };
 
   /**
    * Takes a response and makes an API request for the response's previous page.
    * NOTE this should only be called guarded behind a check to `this.hasPreviousPage(response)`!
    *
-   * @param {response} response A response that was received from the API.
+   * @param {response} response A response that was received from the API, or its `body` property.
    */
   apiModel.getPreviousPage = (response) => {
     if (!apiModel.hasPreviousPage(response)) {
@@ -135,7 +136,7 @@ module.exports = function Bitbucket({ proxy, useXhr } = {}) {
       );
     }
 
-    return apiModel.request.doPrebuiltSend(response.previous);
+    return apiModel.request.doPrebuiltSend(extractResponseBody(response).previous);
   };
 
   return apiModel;

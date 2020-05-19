@@ -5,7 +5,7 @@ const url = require('url');
 const xhr = require('xhr');
 
 /**
- * Performs requests on GitHub API.
+ * Performs requests on Bitbucket API.
  */
 module.exports = function Request(_options) {
   const $defaults = {

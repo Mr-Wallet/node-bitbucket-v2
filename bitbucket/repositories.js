@@ -1,6 +1,7 @@
 const _ = require('lodash');
 
 const constants = require('./constants');
+const { extractResponseBody } = require('./helpers');
 
 /**
  * API docs: https://confluence.atlassian.com/bitbucket/repositories-endpoint-423626330.html
@@ -170,10 +171,10 @@ module.exports = function RepositoriesApi(api) {
     /**
      * Get the forks for a repo using an API response that has repository links
      *
-     * @param {Object} API response
+     * @param {Object} response API response, or its `body` property
      */
     getForksFromResponse: (response) => {
-      const prebuiltURL = response && response.links && response.links.forks && response.links.forks.href;
+      const prebuiltURL = _.get(extractResponseBody(response), ['links', 'forks', 'href']);
 
       if (!prebuiltURL) {
         throw new Error('getForksFromResponse: argument has no \'forks\' url.');
@@ -186,10 +187,10 @@ module.exports = function RepositoriesApi(api) {
      * Get the parent for a repo using an API response that has repository links.
      * This should only be called after a check to hasParent().
      *
-     * @param {Object} API response
+     * @param {Object} response API response, or its `body` property
      */
     getParentFromResponse: (response) => {
-      const prebuiltURL = _.get(response, 'parent.links.self.href');
+      const prebuiltURL = _.get(extractResponseBody(response), ['parent', 'links', 'self', 'href']);
 
       if (!prebuiltURL) {
         throw new Error(
@@ -203,9 +204,9 @@ module.exports = function RepositoriesApi(api) {
     /**
      * Determines whether or not the given response has an accessible parent.
      *
-     * @param {Object} API response
+     * @param {Object} response API response, or its `body` property
      * @return {boolean} true if the argument has an associated "parent" (i.e. the response is a fork), false otherwise.
      */
-    hasParent: (response) => Boolean(response.parent)
+    hasParent: (response) => Boolean(extractResponseBody(response).parent)
   };
 };
