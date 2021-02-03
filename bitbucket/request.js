@@ -2,7 +2,6 @@ const _ = require('lodash');
 const https = require('https');
 const querystring = require('querystring');
 const url = require('url');
-const xhr = require('xhr');
 
 /**
  * Performs requests on Bitbucket API.
@@ -23,7 +22,7 @@ module.exports = function Request(_options) {
     oauth_access_token: null,
     proxy_host: null,
     proxy_port: null,
-    use_xhr: false
+    requester_fn: null
   };
   const $options = _.defaults({}, _options, $defaults);
 
@@ -90,15 +89,15 @@ module.exports = function Request(_options) {
     doPrebuiltSend(prebuiltURL) {
       const { headers, port } = result.prepRequest($options);
 
-      if ($options.use_xhr) {
-        const xhrOptions = {
+      if ($options.requester_fn) {
+        const requesterOptions = {
           headers,
-          json: true,
-          timeout: $options.timeout * 1000,
+          method: 'GET',
           url: prebuiltURL
         };
 
-        return result.sendXhrRequest(xhrOptions);
+
+        return $options.requester_fn(requesterOptions);
       }
 
       const { hostname, path } = url.parse(prebuiltURL);
@@ -126,39 +125,38 @@ module.exports = function Request(_options) {
       const { headers, hostname, port } = result.prepRequest(options);
 
       let query;
-      let path = options.path + '/' + apiPath.replace(/\/*$/, ''); // eslint-disable-line prefer-template
+      const path = options.path + '/' + apiPath.replace(/\/*$/, ''); // eslint-disable-line prefer-template
       if (method === 'POST') {
         query = JSON.stringify(parameters);
         headers['Content-Type'] = 'application/json';
-        if (!options.use_xhr) {
-          headers['Content-Length'] = query.length;
-        }
+        headers['Content-Length'] = query.length;
       }
       else {
         query = querystring.stringify(parameters);
-        path += `?${query}`;
       }
 
-      if (options.use_xhr) {
-        const xhrOptions = {
+      if (options.requester_fn) {
+        const requesterOptions = {
           headers,
-          json: true,
+          hostname,
           method,
-          timeout: options.timeout * 1000,
-          url: `https://${hostname}${path}`
+          path,
+          query,
+          url: `https://${hostname}${path}?${query}`
         };
+
         if (method === 'POST') {
-          xhrOptions.json = parameters;
+          requesterOptions.body = parameters;
         }
 
-        return result.sendXhrRequest(xhrOptions);
+        return options.requester_fn(requesterOptions);
       }
 
       const httpsOptions = {
         headers,
         hostname,
         method,
-        path,
+        path: `${path}?${query}`,
         post: port
       };
 
@@ -186,21 +184,18 @@ module.exports = function Request(_options) {
         oauth_access_token: oauthAccessToken,
         proxy_host: proxyHost,
         proxy_port: proxyPort,
-        use_xhr: useXhr
+        requester_fn
       } = options;
-      const hostname = !useXhr && proxyHost ? proxyHost : _hostname;
-      const port = !useXhr && proxyHost ? proxyPort || 3128 : httpPort || 443;
+      const hostname = !requester_fn && proxyHost ? proxyHost : _hostname;
+      const port = !requester_fn && proxyHost ? proxyPort || 3128 : httpPort || 443;
 
       const headers = {
         'Content-Type': 'application/x-www-form-urlencoded',
-        Authorization: `Bearer ${oauthAccessToken}`
+        Authorization: `Bearer ${oauthAccessToken}`,
+        Host: 'api.bitbucket.org',
+        'User-Agent': 'NodeJS HTTP Client',
+        'Content-Length': '0'
       };
-
-      if (!useXhr) {
-        headers['Host'] = 'api.bitbucket.org'; // eslint-disable-line dot-notation
-        headers['User-Agent'] = 'NodeJS HTTP Client';
-        headers['Content-Length'] = '0';
-      }
 
       return { headers, hostname, port };
     },
@@ -254,31 +249,6 @@ module.exports = function Request(_options) {
       }
 
       request.end();
-
-      return resultPromise;
-    },
-
-    sendXhrRequest(xhrOptions) {
-      let resolve;
-      let reject;
-      const resultPromise = new Promise((_resolve, _reject) => {
-        resolve = _resolve;
-        reject = _reject;
-      });
-
-      xhr(xhrOptions, (error, response) => {
-        if (error) {
-          reject(error);
-          return;
-        }
-
-        if (response.statusCode >= 400) {
-          reject(response);
-          return;
-        }
-
-        resolve(response);
-      });
 
       return resultPromise;
     }

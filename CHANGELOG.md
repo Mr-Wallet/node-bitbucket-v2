@@ -1,5 +1,9 @@
 # CHANGLOG
 
+## 0.6.0
+ - `requesterFn` has been added as an option. When `requesterFn` is provided, all request will be processed by that function.
+ - `useXhr` has been removed and replaced with `requesterFn`.
+
 ## 0.5.2
  - Functions that take an API response as an argument now properly handle taking the _entire_ response, as they did in `0.4.x`. They _also_ still accept just the response's `body` property, as in `0.5.1`. Affected functions: `hasNextPage`, `hasPreviousPage`, `getNextPage`, `getPreviousPage`, `repositories.getForksFromResponse`, `repositories.hasParent`, `repositories.getParentFromResponse`.
 

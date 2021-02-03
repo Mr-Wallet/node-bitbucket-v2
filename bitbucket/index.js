@@ -12,7 +12,7 @@ const { extractResponseBody } = require('./helpers');
  * Based on the PHP GitHub API project http://github.com/ornicar/php-github-api
  */
 
-module.exports = function Bitbucket({ proxy, useXhr } = {}) {
+module.exports = function Bitbucket({ proxy, requesterFn } = {}) {
   /**
    * Define HTTP proxy in format localhost:3128
    */
@@ -30,7 +30,11 @@ module.exports = function Bitbucket({ proxy, useXhr } = {}) {
   };
 
   apiModel.repositories = buildRepositories(apiModel);
-  apiModel.request = buildRequest({ proxy_host: $proxy_host, proxy_port: $proxy_port, use_xhr: useXhr });
+  apiModel.request = buildRequest({
+    proxy_host: $proxy_host,
+    proxy_port: $proxy_port,
+    requester_fn: requesterFn
+  });
   apiModel.user = buildUser(apiModel);
   apiModel.workspaces = buildWorkspaces(apiModel);
 
