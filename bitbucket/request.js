@@ -23,7 +23,8 @@ module.exports = function Request(_options) {
     oauth_access_token: null,
     proxy_host: null,
     proxy_port: null,
-    use_xhr: false
+    use_xhr: false,
+    requester_fn: null
   };
   const $options = _.defaults({}, _options, $defaults);
 
@@ -90,6 +91,19 @@ module.exports = function Request(_options) {
     doPrebuiltSend(prebuiltURL) {
       const { headers, port } = result.prepRequest($options);
 
+      if ($options.requesterFn) {
+        const requesterOptions = {
+          headers,
+          timeout: options.timeout * 1000,
+          url: prebuiltURL
+        };
+
+        const requesterFnByHttpMethod = options.requesterFn(requesterOptions);
+        const requestFn = requesterFnByHttpMethod['GET'];
+
+        return requestFn(path, requestFnOptions);
+      }
+
       if ($options.use_xhr) {
         const xhrOptions = {
           headers,
@@ -137,6 +151,24 @@ module.exports = function Request(_options) {
       else {
         query = querystring.stringify(parameters);
         path += `?${query}`;
+      }
+
+      if (options.requesterFn) {
+        const requesterOptions = {
+          headers,
+          timeout: options.timeout * 1000,
+          url: `https://${hostname}`
+        };
+
+        const requesterFnByHttpMethod = options.requesterFn(requesterOptions);
+        const requestFn = requesterFnByHttpMethod[method];
+
+        const requestFnOptions = {};
+        if (method === 'POST') {
+          requestFnOptions.body = parameters;
+        }
+
+        return requestFn(path, requestFnOptions);
       }
 
       if (options.use_xhr) {
