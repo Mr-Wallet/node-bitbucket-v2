@@ -89,14 +89,15 @@ module.exports = function Request(_options) {
     doPrebuiltSend(prebuiltURL) {
       const { headers, port } = result.prepRequest($options);
 
-      if ($options.requesterFn) {
+      if ($options.requester_fn) {
         const requesterOptions = {
           headers,
+          method: 'GET',
           url: prebuiltURL
         };
 
 
-        return $options.requesterFn(requesterOptions);
+        return $options.requester_fn(requesterOptions);
       }
 
       const { hostname, path } = url.parse(prebuiltURL);
@@ -124,40 +125,38 @@ module.exports = function Request(_options) {
       const { headers, hostname, port } = result.prepRequest(options);
 
       let query;
-      let path = options.path + '/' + apiPath.replace(/\/*$/, ''); // eslint-disable-line prefer-template
+      const path = options.path + '/' + apiPath.replace(/\/*$/, ''); // eslint-disable-line prefer-template
       if (method === 'POST') {
         query = JSON.stringify(parameters);
         headers['Content-Type'] = 'application/json';
-        if (!options.requesterFn) {
-          headers['Content-Length'] = query.length;
-        }
+        headers['Content-Length'] = query.length;
       }
       else {
         query = querystring.stringify(parameters);
-        path += `?${query}`;
       }
 
-      if (options.requesterFn) {
+      if (options.requester_fn) {
         const requesterOptions = {
           headers,
           hostname,
           method,
           path,
-          url: `https://${hostname}${path}`
+          query,
+          url: `https://${hostname}${path}?${query}`
         };
 
         if (method === 'POST') {
           requesterOptions.body = parameters;
         }
 
-        return options.requesterFn(requesterOptions);
+        return options.requester_fn(requesterOptions);
       }
 
       const httpsOptions = {
         headers,
         hostname,
         method,
-        path,
+        path: `${path}?${query}`,
         post: port
       };
 
@@ -185,21 +184,19 @@ module.exports = function Request(_options) {
         oauth_access_token: oauthAccessToken,
         proxy_host: proxyHost,
         proxy_port: proxyPort,
-        requesterFn
+        requester_fn
       } = options;
-      const hostname = !requesterFn && proxyHost ? proxyHost : _hostname;
-      const port = !requesterFn && proxyHost ? proxyPort || 3128 : httpPort || 443;
+      const hostname = !requester_fn && proxyHost ? proxyHost : _hostname;
+      const port = !requester_fn && proxyHost ? proxyPort || 3128 : httpPort || 443;
 
       const headers = {
         'Content-Type': 'application/x-www-form-urlencoded',
         Authorization: `Bearer ${oauthAccessToken}`
       };
 
-      if (!requesterFn) {
-        headers['Host'] = 'api.bitbucket.org'; // eslint-disable-line dot-notation
-        headers['User-Agent'] = 'NodeJS HTTP Client';
-        headers['Content-Length'] = '0';
-      }
+      headers['Host'] = 'api.bitbucket.org'; // eslint-disable-line dot-notation
+      headers['User-Agent'] = 'NodeJS HTTP Client';
+      headers['Content-Length'] = '0';
 
       return { headers, hostname, port };
     },

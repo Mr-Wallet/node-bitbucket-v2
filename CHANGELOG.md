@@ -1,6 +1,6 @@
 # CHANGLOG
 
-## 0.5.3
+## 0.6.0
  - `requesterFn` has been added as an option. When `requesterFn` is provided, all request will be processed by that function.
  - `useXhr` has been removed and replaced with `requesterFn`.
 
