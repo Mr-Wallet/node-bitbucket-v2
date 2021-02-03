@@ -1,14 +1,15 @@
 # CHANGLOG
 
 ## 0.6.0
+Thanks to [@andrewyalung](https://github.com/andrewyalung/) for authoring most of this version!
  - `requesterFn` has been added as an option. When `requesterFn` is provided, all request will be processed by that function.
  - `useXhr` has been removed and replaced with `requesterFn`.
+ - Fixed non-default `port` being ignored in default request implementation.
 
 ## 0.5.2
  - Functions that take an API response as an argument now properly handle taking the _entire_ response, as they did in `0.4.x`. They _also_ still accept just the response's `body` property, as in `0.5.1`. Affected functions: `hasNextPage`, `hasPreviousPage`, `getNextPage`, `getPreviousPage`, `repositories.getForksFromResponse`, `repositories.hasParent`, `repositories.getParentFromResponse`.
 
 ## 0.5.1
-
 This version is targeted at two main goals:
 1. Bitbucket's _breaking_ API changes (migrating from users and teams to "workspaces"), in order to comply with GDPR. For more details, see: https://developer.atlassian.com/cloud/bitbucket/bitbucket-api-changes-workspaces/
 2. Modernizing the code from node-callbacks to promises.

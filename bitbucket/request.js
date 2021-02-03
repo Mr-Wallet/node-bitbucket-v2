@@ -106,7 +106,7 @@ module.exports = function Request(_options) {
         hostname,
         method: 'GET',
         path,
-        post: port
+        port
       };
 
       return result.sendHttpsRequest(httpsOptions);
@@ -157,7 +157,7 @@ module.exports = function Request(_options) {
         hostname,
         method,
         path: `${path}?${query}`,
-        post: port
+        port
       };
 
       return result.sendHttpsRequest(httpsOptions, query);
