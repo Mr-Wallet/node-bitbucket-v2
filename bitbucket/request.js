@@ -2,7 +2,6 @@ const _ = require('lodash');
 const https = require('https');
 const querystring = require('querystring');
 const url = require('url');
-const xhr = require('xhr');
 
 /**
  * Performs requests on Bitbucket API.
@@ -23,7 +22,6 @@ module.exports = function Request(_options) {
     oauth_access_token: null,
     proxy_host: null,
     proxy_port: null,
-    use_xhr: false,
     requester_fn: null
   };
   const $options = _.defaults({}, _options, $defaults);
@@ -94,25 +92,11 @@ module.exports = function Request(_options) {
       if ($options.requesterFn) {
         const requesterOptions = {
           headers,
-          timeout: options.timeout * 1000,
           url: prebuiltURL
         };
 
-        const requesterFnByHttpMethod = options.requesterFn(requesterOptions);
-        const requestFn = requesterFnByHttpMethod['GET'];
 
-        return requestFn(path, requestFnOptions);
-      }
-
-      if ($options.use_xhr) {
-        const xhrOptions = {
-          headers,
-          json: true,
-          timeout: $options.timeout * 1000,
-          url: prebuiltURL
-        };
-
-        return result.sendXhrRequest(xhrOptions);
+        return $options.requesterFn(requesterOptions);
       }
 
       const { hostname, path } = url.parse(prebuiltURL);
@@ -144,7 +128,7 @@ module.exports = function Request(_options) {
       if (method === 'POST') {
         query = JSON.stringify(parameters);
         headers['Content-Type'] = 'application/json';
-        if (!options.use_xhr) {
+        if (!options.requesterFn) {
           headers['Content-Length'] = query.length;
         }
       }
@@ -156,34 +140,17 @@ module.exports = function Request(_options) {
       if (options.requesterFn) {
         const requesterOptions = {
           headers,
-          timeout: options.timeout * 1000,
-          url: `https://${hostname}`
-        };
-
-        const requesterFnByHttpMethod = options.requesterFn(requesterOptions);
-        const requestFn = requesterFnByHttpMethod[method];
-
-        const requestFnOptions = {};
-        if (method === 'POST') {
-          requestFnOptions.body = parameters;
-        }
-
-        return requestFn(path, requestFnOptions);
-      }
-
-      if (options.use_xhr) {
-        const xhrOptions = {
-          headers,
-          json: true,
+          hostname,
           method,
-          timeout: options.timeout * 1000,
+          path,
           url: `https://${hostname}${path}`
         };
+
         if (method === 'POST') {
-          xhrOptions.json = parameters;
+          requesterOptions.body = parameters;
         }
 
-        return result.sendXhrRequest(xhrOptions);
+        return options.requesterFn(requesterOptions);
       }
 
       const httpsOptions = {
@@ -218,17 +185,17 @@ module.exports = function Request(_options) {
         oauth_access_token: oauthAccessToken,
         proxy_host: proxyHost,
         proxy_port: proxyPort,
-        use_xhr: useXhr
+        requesterFn
       } = options;
-      const hostname = !useXhr && proxyHost ? proxyHost : _hostname;
-      const port = !useXhr && proxyHost ? proxyPort || 3128 : httpPort || 443;
+      const hostname = !requesterFn && proxyHost ? proxyHost : _hostname;
+      const port = !requesterFn && proxyHost ? proxyPort || 3128 : httpPort || 443;
 
       const headers = {
         'Content-Type': 'application/x-www-form-urlencoded',
         Authorization: `Bearer ${oauthAccessToken}`
       };
 
-      if (!useXhr) {
+      if (!requesterFn) {
         headers['Host'] = 'api.bitbucket.org'; // eslint-disable-line dot-notation
         headers['User-Agent'] = 'NodeJS HTTP Client';
         headers['Content-Length'] = '0';
@@ -286,31 +253,6 @@ module.exports = function Request(_options) {
       }
 
       request.end();
-
-      return resultPromise;
-    },
-
-    sendXhrRequest(xhrOptions) {
-      let resolve;
-      let reject;
-      const resultPromise = new Promise((_resolve, _reject) => {
-        resolve = _resolve;
-        reject = _reject;
-      });
-
-      xhr(xhrOptions, (error, response) => {
-        if (error) {
-          reject(error);
-          return;
-        }
-
-        if (response.statusCode >= 400) {
-          reject(response);
-          return;
-        }
-
-        resolve(response);
-      });
 
       return resultPromise;
     }

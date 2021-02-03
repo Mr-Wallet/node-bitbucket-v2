@@ -1,7 +1,7 @@
 {
   "name": "bitbucket-v2",
-  "version": "0.5.2",
-  "description": "Wrapper for the BitBucket API v2, the version required to use OAuth2. Includes support for XHR requests.",
+  "version": "0.5.3",
+  "description": "Wrapper for the BitBucket API v2, the version required to use OAuth2. Includes support for custom HTTP clients.",
   "author": "Jordan Wallet <jjwallet@gmail.com>",
   "homepage": "https://github.com/Mr-Wallet/node-bitbucket-v2.git",
   "main": "bitbucket/index.js",
@@ -17,8 +17,7 @@
   ],
   "dependencies": {
     "lodash": "^4.17.15",
-    "oauth": "~0.9.14",
-    "xhr": "^2.2.0"
+    "oauth": "~0.9.14"
   },
   "devDependencies": {
     "eslint": "^3.12.2",
