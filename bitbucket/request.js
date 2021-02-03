@@ -191,12 +191,11 @@ module.exports = function Request(_options) {
 
       const headers = {
         'Content-Type': 'application/x-www-form-urlencoded',
-        Authorization: `Bearer ${oauthAccessToken}`
+        Authorization: `Bearer ${oauthAccessToken}`,
+        Host: 'api.bitbucket.org',
+        'User-Agent': 'NodeJS HTTP Client',
+        'Content-Length': '0'
       };
-
-      headers['Host'] = 'api.bitbucket.org'; // eslint-disable-line dot-notation
-      headers['User-Agent'] = 'NodeJS HTTP Client';
-      headers['Content-Length'] = '0';
 
       return { headers, hostname, port };
     },

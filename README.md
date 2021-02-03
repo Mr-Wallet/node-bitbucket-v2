@@ -16,7 +16,7 @@ bitbucketApi.user.get().then(({ body }) => {
 
 ### `options`
 It is not necessary to provide any options at all (`Bitbucket` can be constructed with no argument).
- - `requesterFn` (`(options) => Promise<any>`): If provided, requests will be made using the function you provide. This is allows you to use your preferred http client. The `options` provided are `{ headers, hostname, method, path, query, url, body? }`. `body` is only provided on `POST` methods. In the case of `doPrebuiltSend` (e.g. pagination), only `{ headers, method, url }` are provided in the options. Example:
+ - `requesterFn` (`(options) => Promise<any>`): If provided, requests will be made using the function you provide. This is allows you to use your preferred http client. The `options` provided are `{ headers, hostname, method, path, query, url, body? }`. `body` is only provided on `POST` methods. In the case of `getNextPage`, `getPreviousPage`, `getForksFromResponse` and `getParentFromResponse`, only `{ headers, method, url }` are provided in the options. Example:
  ```
   const axios = require('axios');
   const Bitbucket = require('node-bitbucket-v2');
